@@ -17,6 +17,28 @@ function Create(props){
   </article>
 }
 
+function Update(props){
+  const [title, setTitle] = useState(props.title);
+  const [body, setBody] = useState(props.body);
+  return <article>
+  <h2>Update</h2>
+    <form onSubmit={event=>{
+      event.preventDefault();
+      const title = event.target.title.value;
+      const body = event.target.body.value;
+      props.onUpdate(title,body);
+    }}>
+      <p><input type="text" name="title" placeholder="title" value={title} onChange={(event=>{
+        setTitle(event.target.value);
+      })}/></p>
+      <p><textarea name="body" placeholder="body" value={body} onChange={(event=>{
+        setBody(event.target.value);
+      })}></textarea></p>
+      <p><input type="submit" value="Update" /></p>
+    </form>
+  </article>
+}
+
 function Header(props){
   return <header>
     <h1><a href="/" onClick={(event) => {
@@ -27,7 +49,6 @@ function Header(props){
 }
 
 function Nav(props){
-
   const tmp = props.topics;
   const lis = tmp.map((tmp) => <li key={tmp.id}> <a id={tmp.id} href={'/read/' + tmp.id} onClick={event=>{
     event.preventDefault();
@@ -64,11 +85,13 @@ function App() {
   ]);
 
   let content = null;
+  let contextControll = null;
 
   if(mode === 'WELCOME'){
     content = <Article title="Welcome" body="Hello, WEB"></Article>
   }
   else if (mode === 'READ'){
+
     let title, body = null;
     for(let i=0; i<topics.length; i++){
       if(topics[i].id === id){
@@ -76,9 +99,15 @@ function App() {
         body = topics[i].body;
       }
     }
-    content = <Article title={title} body={body}></Article>
+    content = <Article title={title} body={body}></Article>;
+    contextControll = <li><a href={"/update/" + id} onClick={event=>{
+      event.preventDefault();
+      setMode("UPDATE");
+    }}>Update</a></li>;
+
   }
   else if (mode === 'CREATE'){
+
     content = <Create onCreate={(_title,_body)=>{
       const newTopic = {id:nextId, title:_title, body:_body}
       const newTopics = [...topics];
@@ -88,6 +117,30 @@ function App() {
       setId(nextId);
       setNextId(nextId+1);
     }}></Create>
+
+  }
+  else if (mode === 'UPDATE'){
+
+    let title, body = null;
+    for(let i=0; i<topics.length; i++){
+      if(topics[i].id === id){
+        title = topics[i].title;
+        body = topics[i].body;
+      }
+    content = <Update title={title} body={body} onUpdate={(title,body)=>{
+      const newTopics = [...topics]
+      const updatedTopic = {id:id, title:title, body:body}
+      for(let i=0; i<newTopics.length; i++){
+        if(newTopics[i].id === id){
+          newTopics[i] = updatedTopic;
+          break;
+        }
+      }
+      setTopics(newTopics);
+      setMode('READ');
+    }}></Update>
+
+    }
   }
 
   return (
@@ -102,10 +155,14 @@ function App() {
       }}></Nav>
       {content}
 
-      <a href="/create" onClick={event => {
-        event.preventDefault();
-        setMode('CREATE');
-      }}>Create</a>
+      <ul>
+        <li><a href="/create" onClick={event => {
+          event.preventDefault();
+          setMode('CREATE');
+        }}>Create</a></li>
+
+        {contextControll}
+      </ul>
     </div>
   );
 }
